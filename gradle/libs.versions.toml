@@ -1,0 +1,54 @@
+[versions]
+agp-version = "8.3.2"
+kotlin-version = "1.9.24"
+compose-library-version = "1.6.8"
+navigation-verion = "2.7.7"
+jetbrains-kotlin-jvm-version = "1.9.24"
+compose-compiler-version = "1.5.14"
+
+[libraries]
+
+compose-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "compose-library-version" }
+compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "compose-library-version" }
+compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview", version.ref = "compose-library-version" }
+compose-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "compose-library-version" }
+compose-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "compose-library-version" }
+compose-material = { group = "androidx.compose.material", name = "material", version.ref = "compose-library-version" }
+compose-activity = { group = "androidx.activity", name = "activity-compose", version = "1.9.0" }
+
+navigation-common-ktx = { group = "androidx.navigation", name = "navigation-common-ktx", version.ref = "navigation-verion" }
+navigation-ui-ktx = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigation-verion" }
+navigation-runtime-ktx = { group = "androidx.navigation", name = "navigation-runtime-ktx", version.ref = "navigation-verion" }
+navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation-verion" }
+
+kotlinpoet-library = { group = "com.squareup", name = "kotlinpoet", version = "1.16.0" }
+kotlinpoet-ksp = { group = "com.squareup", name = "kotlinpoet-ksp", version = "1.16.0" }
+
+ksp-symbol-processing-api = { group = "com.google.devtools.ksp", name = "symbol-processing-api", version = "1.9.24-1.0.20" }
+
+[plugins]
+application-gradle-plugin = { id = "com.android.application", version.ref = "agp-version" }
+library-gradle-plugin = { id = "com.android.library", version.ref = "agp-version" }
+kotlin-android-gradle-plugin = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin-version" }
+ksp-devtools-gradle-plugin = { id = "com.google.devtools.ksp", version = "1.9.24-1.0.20" }
+kotlin-parcelize-gradle-plugin = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin-version" }
+jetbrains-kotlin-jvm-gradle-plugin = { id = "org.jetbrains.kotlin.jvm", version.ref = "jetbrains-kotlin-jvm-version" }
+
+[bundles]
+compose-tooling = [
+    "compose-ui-tooling",
+    "compose-ui-tooling-preview",
+]
+
+compose = [
+    "compose-ui",
+    "compose-ui-text-google-fonts",
+    "compose-material",
+    "compose-activity",
+    "compose-runtime",
+]
+
+navigation = [
+    "navigation-ui-ktx",
+    "navigation-compose",
+]

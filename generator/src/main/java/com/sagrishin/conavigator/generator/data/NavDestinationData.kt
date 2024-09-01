@@ -12,12 +12,14 @@ data class NavDestinationData constructor(
     val graphInstallInto: ClassName?,
     val isStartDestination: Boolean,
     val requiresNavigator: Boolean,
+    val requiresAnimatedScope: Boolean,
+    val arguments: Map<String, ClassName>,
     private val annotatedTarget: KSFunctionDeclaration,
 ) {
     val hasArguments: Boolean
         get() = navArgs != null
 
-    val navRouteClassName: ClassName
+    val destinationRouteClassName: ClassName
         get() = annotatedTargetClassName.toNavRoute()
 
     val annotatedTargetClassName: ClassName

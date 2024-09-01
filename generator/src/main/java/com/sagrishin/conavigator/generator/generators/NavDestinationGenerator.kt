@@ -16,11 +16,11 @@ class NavDestinationGenerator constructor(
 
     override fun generate(data: NavDestinationData) {
         file(data.destinationClassName) {
-            val argsSerializer = data.argsSerializer
+            val destinationArgsSerializerClassName = data.argsSerializer
 
-            if (argsSerializer != null) {
+            if (destinationArgsSerializerClassName != null) {
                 val navArgs = data.navArgs!!
-                defineObject(argsSerializer) {
+                defineObject(destinationArgsSerializerClassName) {
                     modifier(KModifier.PRIVATE)
                     superInterface(NavArgumentsFactoryClassName)
 
@@ -29,13 +29,8 @@ class NavDestinationGenerator constructor(
                         param("string", String::class)
 
                         buildCodeBlock {
-                            if (data.hasArguments) {
-                                addImport(ContractsPackage, "decode")
-
-                                returns { "string.decode<%T>()".formatWith(navArgs) }
-                            } else {
-                                returns { "null" }
-                            }
+                            addImport(ContractsPackage, "decode")
+                            returns { "string.decode<%T>()".formatWith(navArgs) }
                         }
                     }
 
@@ -45,29 +40,29 @@ class NavDestinationGenerator constructor(
 
                         buildCodeBlock {
                             addImport(ContractsPackage, "encode")
-                            returns { "$DestinationArgsTypeName.encode()" }
+                            returns { "$DestinationArgsVarName.encode()" }
                         }
                     }
                 }
             }
 
-            defineClass(data.navRouteClassName) {
+            defineClass(data.destinationRouteClassName) {
                 if (data.hasArguments) modifier(KModifier.DATA)
                 superInterface(NavRouteClassName)
-                constructor { if (data.navArgs != null) param(DestinationArgsTypeName, data.navArgs) }
+                constructor { if (data.navArgs != null) param(DestinationArgsVarName, data.navArgs) }
 
-                property(DestinationArgsTypeName, data.navArgs ?: NavArgumentsClassName.asNullable()) {
+                property(DestinationArgsVarName, data.navArgs ?: NavArgumentsClassName.asNullable()) {
                     modifier(KModifier.OVERRIDE)
                     if (data.hasArguments) {
-                        initializer(DestinationArgsTypeName)
+                        initializer(DestinationArgsVarName)
                     } else {
-                        getter { "return null" }
+                        getter { "null" }
                     }
                 }
 
                 property("baseRoute", String::class) {
                     modifier(KModifier.OVERRIDE)
-                    getter { "return \"${data.baseRoute}\"" }
+                    getter { "\"${data.baseRoute}\"" }
                 }
 
                 function("computeRoute", String::class) {
@@ -76,9 +71,9 @@ class NavDestinationGenerator constructor(
                     buildCodeBlock {
                         if (data.hasArguments) {
                             returns {
-                                val argsName = DestinationArgsTypeName
+                                val argsName = DestinationArgsVarName
                                 val format = "baseRoute.replace(\"{$argsName}\", %T.serializeToString($argsName))"
-                                format.formatWith(argsSerializer!!)
+                                format.formatWith(destinationArgsSerializerClassName!!)
                             }
                         } else {
                             returns { "baseRoute" }
@@ -92,31 +87,34 @@ class NavDestinationGenerator constructor(
 
                 property("baseRoute", String::class) {
                     modifier(KModifier.OVERRIDE)
-                    getter { "return \"${data.baseRoute}\"" }
+                    getter { "\"${data.baseRoute}\"" }
                 }
 
+                val composableParams = mapOf(
+                    "entry" to NavBackStackEntryClassName,
+                    "animatedScope" to AnimatedVisibilityScopeClassName,
+                    "navigator" to NavigatorClassName,
+                )
                 function("Composable") {
                     modifier(KModifier.OVERRIDE)
                     annotation(ComposableAnnotation)
-                    params(
-                        "entry" to NavBackStackEntryClassName,
-                        "navigator" to NavigatorClassName,
-                    )
+                    params(composableParams)
 
                     buildCodeBlock {
-                        val arguments = buildList {
-                            if (data.hasArguments) add(DestinationArgsTypeName)
-                            if (data.requiresNavigator) add("navigator")
+                        val reversed = composableParams.reverseKeyValue()
+                        val arguments = data.arguments.map { (name, type) ->
+                            name to if (type == data.navArgs) DestinationArgsVarName else reversed.getValue(type)
                         }
 
                         if (data.hasArguments) {
                             addImport(ContractsPackage, "getNavArguments")
 
-                            val format = "val args: %T = entry.getNavArguments(%T)"
+                            val format = "val ${DestinationArgsVarName}: %T = entry.getNavArguments(%T)"
                             addStatement(format, data.navArgs, data.argsSerializer)
                         }
 
-                        addStatement("%T(${arguments.joinToString()})", data.annotatedTargetClassName)
+                        val params = arguments.joinToString { (name, varName) -> "$name = $varName" }
+                        addStatement("%T($params)", data.annotatedTargetClassName)
                     }
                 }
             }

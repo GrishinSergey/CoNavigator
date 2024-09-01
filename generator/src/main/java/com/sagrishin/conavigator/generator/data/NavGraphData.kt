@@ -15,9 +15,4 @@ data class NavGraphData constructor(
     val baseRouteProvider: CodeBlock
         get() = "return %T.Companion.baseRoute".toStatement(installIntoGraphClassName)
 
-    val startDestination: NavDestinationData
-        get() = requireNotNull(destinations.find(NavDestinationData::isStartDestination)) {
-            "There is no start destination for '${installIntoGraphClassName.simpleName}'"
-        }
-
 }

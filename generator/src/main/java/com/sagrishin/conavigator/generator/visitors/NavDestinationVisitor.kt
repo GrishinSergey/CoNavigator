@@ -1,15 +1,19 @@
 package com.sagrishin.conavigator.generator.visitors
 
+import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSValueParameter
 import com.sagrishin.conavigator.generator.annotation.Destination
 import com.sagrishin.conavigator.generator.data.NavDestinationData
+import com.sagrishin.conavigator.generator.utils.AnimatedVisibilityScopeClassName
 import com.sagrishin.conavigator.generator.utils.BaseRouteTypeName
-import com.sagrishin.conavigator.generator.utils.DestinationArgsTypeName
+import com.sagrishin.conavigator.generator.utils.DestinationArgsVarName
 import com.sagrishin.conavigator.generator.utils.IsStartDestinationArgName
+import com.sagrishin.conavigator.generator.utils.NavArgumentsClassName
 import com.sagrishin.conavigator.generator.utils.NavGraphInstallIntoName
 import com.sagrishin.conavigator.generator.utils.NavigatorClassName
 import com.squareup.kotlinpoet.ClassName
@@ -20,12 +24,16 @@ class NavDestinationVisitor : BaseVisitor<NavDestinationData>() {
 
     override fun visitFunctionDeclaration(function: KSFunctionDeclaration): Sequence<NavDestinationData> {
         val annotation = function.findAnnotation<Destination>()
+        val arguments = function.parameters.associate {
+            requireNotNull(it.name).asString() to requireNotNull(it.type.resolve())
+        }
         val (packageName, simpleName) = (function.packageName.asString() to function.simpleName.asString())
-        val navArgs = obtainNavArgs(annotation)
+        val navArgs = obtainNavArgs(arguments)
         val baseRoute = obtainBaseRoute(annotation, simpleName, navArgs != null)
         val graphInstallInto = obtainGraphInstallInto(annotation)
         val isStartDestination = isStartDestination(annotation)
         val requiresNavigator = findNavigatorInParamsOf(function)?.name != null
+        val requiresAnimatedScope = findAnimatedScopeInParamsOf(function)?.name != null
 
         return sequenceOf(
             NavDestinationData(
@@ -37,6 +45,8 @@ class NavDestinationVisitor : BaseVisitor<NavDestinationData>() {
                 graphInstallInto = graphInstallInto,
                 isStartDestination = isStartDestination,
                 requiresNavigator = requiresNavigator,
+                requiresAnimatedScope = requiresAnimatedScope,
+                arguments = arguments.map { it.key to it.value.toClassName() }.toMap(),
             )
         )
     }
@@ -50,6 +60,10 @@ class NavDestinationVisitor : BaseVisitor<NavDestinationData>() {
         return function.parameters.find { it.type.resolve().toClassName() == NavigatorClassName }
     }
 
+    private fun findAnimatedScopeInParamsOf(function: KSFunctionDeclaration): KSValueParameter? {
+        return function.parameters.find { it.type.resolve().toClassName() == AnimatedVisibilityScopeClassName }
+    }
+
     private fun obtainBaseRoute(annotation: KSAnnotation, annotatedTargetName: String, hasArguments: Boolean): String {
         val baseRoute = annotation.findArgument<String>(BaseRouteTypeName)
         val routeParts = buildList {
@@ -58,15 +72,16 @@ class NavDestinationVisitor : BaseVisitor<NavDestinationData>() {
                 false -> addAll(annotatedTargetName.split("(?<=.)(?=\\p{Lu})".toRegex()).dropLast(1))
             }
 
-            if (hasArguments) add("{${DestinationArgsTypeName}}")
+            if (hasArguments) add("{${DestinationArgsVarName}}")
         }
 
         return routeParts.joinToString("/").let { if (!it.startsWith("/")) "/$it" else it }.lowercase()
     }
 
-    private fun obtainNavArgs(annotation: KSAnnotation): ClassName? {
-        return annotation.findArgument<KSType?>(DestinationArgsTypeName)?.toClassName()
-            .thisOrNullIf { it != Any::class.asClassName() }
+    private fun obtainNavArgs(arguments: Map<String, KSType>): ClassName? {
+        return arguments.values.find { ksType ->
+            ksType.declaration.accept(NavArgumentsVisitor(), logger).firstOrNull() != null
+        }?.toClassName()
     }
 
     private fun obtainGraphInstallInto(annotation: KSAnnotation): ClassName? {
@@ -85,6 +100,13 @@ class NavDestinationVisitor : BaseVisitor<NavDestinationData>() {
 
     private inline fun <reified T> T.thisOrNullIf(condition: (T) -> Boolean): T? {
         return if (condition(this)) this else null
+    }
+
+
+    private class NavArgumentsVisitor : BaseVisitor<ClassName>() {
+        override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: KSPLogger): Sequence<ClassName> {
+            return classDeclaration.superTypes.map { it.resolve().toClassName() }.filter { it == NavArgumentsClassName }
+        }
     }
 
 }

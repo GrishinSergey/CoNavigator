@@ -6,6 +6,10 @@ import com.google.devtools.ksp.symbol.KSNode
 import com.google.devtools.ksp.visitor.KSDefaultVisitor
 
 abstract class BaseVisitor<R> : KSDefaultVisitor<KSPLogger, Sequence<R>>() {
+    protected val logger: KSPLogger
+        get() = requireNotNull(_logger)
+    private var _logger: KSPLogger? = null
+
     override fun defaultHandler(node: KSNode, data: KSPLogger): Sequence<R> = emptySequence()
 
     open fun visitFunctionDeclaration(function: KSFunctionDeclaration): Sequence<R> {
@@ -13,6 +17,7 @@ abstract class BaseVisitor<R> : KSDefaultVisitor<KSPLogger, Sequence<R>>() {
     }
 
     override fun visitFunctionDeclaration(function: KSFunctionDeclaration, data: KSPLogger): Sequence<R> {
+        this._logger = data
         return visitFunctionDeclaration(function)
     }
 }

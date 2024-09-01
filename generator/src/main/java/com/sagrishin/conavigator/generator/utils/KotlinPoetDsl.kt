@@ -58,7 +58,7 @@ fun PropertySpec.Builder.modifier(modifier: KModifier) {
 }
 
 fun PropertySpec.Builder.getter(builder: () -> String) {
-    getter(codeBlock = buildCodeBlock { addStatement(builder()) })
+    getter(codeBlock = buildCodeBlock { addStatement("return ${builder()}") })
 }
 
 fun PropertySpec.Builder.getter(codeBlock: CodeBlock) {
@@ -119,6 +119,10 @@ fun <T: Any?> FunSpec.Builder.param(name: String, type: ClassName, defaultValue:
 }
 
 fun FunSpec.Builder.params(vararg map: Pair<String, ClassName>) {
+    addParameters(map.map { (key, value) -> ParameterSpec.builder(key, value).build() })
+}
+
+fun FunSpec.Builder.params(map: Map<String, ClassName>) {
     addParameters(map.map { (key, value) -> ParameterSpec.builder(key, value).build() })
 }
 

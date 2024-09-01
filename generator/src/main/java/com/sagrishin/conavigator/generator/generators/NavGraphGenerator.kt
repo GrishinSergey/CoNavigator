@@ -5,7 +5,7 @@ import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.KSPLogger
 import com.sagrishin.conavigator.generator.data.NavDestinationData
 import com.sagrishin.conavigator.generator.data.NavGraphData
-import com.sagrishin.conavigator.generator.utils.DestinationArgsTypeName
+import com.sagrishin.conavigator.generator.utils.DestinationArgsVarName
 import com.sagrishin.conavigator.generator.utils.NavArgumentsClassName
 import com.sagrishin.conavigator.generator.utils.NavEntryClassName
 import com.sagrishin.conavigator.generator.utils.NavRouteClassName
@@ -33,17 +33,14 @@ class NavGraphGenerator constructor(
 ) : BaseGenerator<NavGraphData>() {
 
     override fun generate(data: NavGraphData) {
-        val startDestination = data.startDestination
-        val hasArguments = startDestination.hasArguments
-
         file(data.installIntoGraphClassName) {
             defineClass(data.installIntoGraphClassName.toNavRoute()) {
                 superInterface(NavRouteClassName)
                 constructor()
 
-                property(DestinationArgsTypeName, NavArgumentsClassName.asNullable()) {
+                property(DestinationArgsVarName, NavArgumentsClassName.asNullable()) {
                     modifier(KModifier.OVERRIDE)
-                    getter { "return null" }
+                    getter { "null" }
                 }
 
                 property("baseRoute", String::class) {
@@ -59,19 +56,14 @@ class NavGraphGenerator constructor(
 
             defineClass(data.implGraphClassName) {
                 superInterface(data.installIntoGraphClassName)
-                constructor()
 
                 constructor {
-                    if (hasArguments) param("startRoute", startDestination.navRouteClassName)
+                    param("startRoute", NavRouteClassName)
                 }
 
-                property("startRoute", if (hasArguments) startDestination.navRouteClassName else NavRouteClassName) {
+                property("startRoute", NavRouteClassName) {
                     modifier(KModifier.OVERRIDE)
-                    if (hasArguments) {
-                        initializer("startRoute")
-                    } else {
-                        initializer("%T()", startDestination.navRouteClassName)
-                    }
+                    initializer("startRoute")
                 }
 
                 property("baseRoute", String::class) {

@@ -1,6 +1,7 @@
 package com.sagrishin.conavigator.library
 
 import android.os.Parcelable
+import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavBackStackEntry
 
@@ -23,7 +24,7 @@ interface NavRouteProvider {
 
 interface NavDestination : NavEntry {
     @Composable
-    fun Composable(entry: NavBackStackEntry, navigator: Navigator)
+    fun Composable(entry: NavBackStackEntry, animatedScope: AnimatedVisibilityScope, navigator: Navigator)
 }
 
 

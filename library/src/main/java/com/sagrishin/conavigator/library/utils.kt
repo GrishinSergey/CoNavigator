@@ -28,7 +28,7 @@ fun NavGraphBuilder.destination(navigator: Navigator, navDestination: NavDestina
         else -> null
     }
 
-    composable(navDestination.baseRoute, listOfNotNull(arguments)) { navDestination.Composable(it, navigator) }
+    composable(navDestination.baseRoute, listOfNotNull(arguments)) { navDestination.Composable(it, this, navigator) }
 }
 
 
@@ -48,7 +48,8 @@ fun NavGraphBuilder.graph(navigator: Navigator, navGraph: NavGraph) {
 private fun NavGraphBuilder.startEntry(navigator: Navigator, navEntry: NavEntry, navArguments: NavArguments?) {
     when (navEntry) {
         is NavDestination -> {
-            destination(navigator, navEntry, namedNavArgument(ArgsBundleKey, NavType.StringType, navArguments))
+            val args = navArguments?.let { namedNavArgument(ArgsBundleKey, NavType.StringType, it) }
+            destination(navigator, navEntry, args)
         }
         is NavGraph -> {
             graph(navigator, navEntry)

@@ -1,7 +1,10 @@
 plugins {
     alias(libs.plugins.library.gradle.plugin)
     alias(libs.plugins.kotlin.android.gradle.plugin)
+    id("maven-publish")
 }
+
+group = "com.sagrishin.conavigator.library"
 
 android {
     namespace = "com.sagrishin.conavigator.library"
@@ -42,4 +45,16 @@ dependencies {
     implementation(libs.navigation.common.ktx)
     implementation(libs.navigation.runtime.ktx)
     implementation(libs.navigation.compose)
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = "com.sagrishin.conavigator"
+            artifactId = "nav-library"
+            version = "1.0.0"
+
+            afterEvaluate { artifact(tasks.getByName("bundleReleaseAar")) }
+        }
+    }
 }
